@@ -44,6 +44,10 @@ db.user_detail = require("./user_detail")(sequelize, Sequelize);
 db.posts = require("./posts")(sequelize, Sequelize);
 db.post_tag = require("./post_tag")(sequelize, Sequelize);
 db.tags = require("./tags")(sequelize, Sequelize);
+db.comments = require("./comment")(sequelize, Sequelize);
+db.images = require("./images")(sequelize, Sequelize);
+db.videos = require("./video")(sequelize, Sequelize);
+db.tag_taggable = require("./tag_taggable")(sequelize, Sequelize);
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
@@ -69,6 +73,82 @@ db.posts.belongsToMany(db.tags, {
 });
 db.tags.belongsToMany(db.posts, { through: "post_tag" });
 
+
+
+//polymorphic one to many 
+
+db.images.hasMany(db.comments, {
+  foreignKey: "commentableid",
+  constraints: false,
+  scope: {
+    commentableType :'image'
+  },
+});
+
+db.videos.hasMany(db.comments, {
+  foreignKey: "commentableid",
+  constraints: false,
+  scope: {
+    commentableType: "video",
+  },
+});
+
+
+db.comments.belongsTo(db.images, { foreignKey: "commentableid", constraints: false});
+db.comments.belongsTo(db.videos, { foreignKey: "commentableid", constraints: false});
+
+//polymorphic many to many 
+//image to tag 
+db.images.belongsToMany(db.tags,{
+  through :
+  {
+    model:db.tag_taggable,
+    unique :false,
+    scope:{
+      taggableType : 'image'
+    }
+  },
+  foreignKey :'taggableId',
+  constraints:false
+});
+
+//tag to image 
+db.tags.belongsToMany(db.images, {
+  through: {
+    model: db.tag_taggable,
+    unique: false,
+    scope: {
+      taggableType: "image",
+    },
+  },
+  foreignKey: "taggableId",
+  constraints: false,
+});
+
+//video to tag
+db.videos.belongsToMany(db.tags, {
+  through: {
+    model: db.tag_taggable,
+    unique: false,
+    scope: {
+      taggableType: "video",
+    },
+  },
+  foreignKey: "taggableId",
+  constraints: false,
+});
+//tag to video 
+db.tags.belongsToMany(db.videos, {
+  through: {
+    model: db.tag_taggable,
+    unique: false,
+    scope: {
+      taggableType: "video",
+    },
+  },
+  foreignKey: "taggableId",
+  constraints: false,
+});
 
 
 db.sequelize.sync({ force: false }).then(() => {
